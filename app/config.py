@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR
 
     # Transcribe
-    transcribe_language_code: Optional[str] = "en-US"
+    transcribe_language_code: Optional[str] = None
     max_file_size_mb: int = 25
 
     # Polly
