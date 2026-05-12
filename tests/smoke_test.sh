@@ -52,8 +52,8 @@ if echo "$BODY" | grep -q "Empty audio file"; then pass "Empty file → rejected
 BODY=$(curl -s -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" -d '{}' "$BASE_URL/v1/audio/speech")
 if echo "$BODY" | grep -q "Missing 'input' field"; then pass "Missing input → rejected"; else fail "Missing input" "$BODY"; fi
 
-LONG_TEXT=$(python3 -c "print('x'*3001)")
-BODY=$(curl -s -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" -d "{\"input\":\"$LONG_TEXT\"}" "$BASE_URL/v1/audio/speech")
+LONG_PAYLOAD=$(python3 -c "import json; print(json.dumps({'input': 'x'*3001}))")
+BODY=$(curl -s -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" -d "$LONG_PAYLOAD" "$BASE_URL/v1/audio/speech")
 if echo "$BODY" | grep -q "Text too long"; then pass "Text too long → rejected"; else fail "Text too long" "$BODY"; fi
 
 # --- TTS (requires AWS creds) ---

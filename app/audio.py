@@ -42,6 +42,10 @@ async def transcode_to_pcm(audio_bytes: bytes) -> bytes:
         await proc.wait()
         log.error("ffmpeg.timeout", timeout=FFMPEG_TIMEOUT_SECONDS)
         raise RuntimeError("Audio transcoding timed out") from e
+    finally:
+        if proc.returncode is None:
+            proc.kill()
+            await proc.wait()
     if proc.returncode != 0:
         log.error("ffmpeg.failed", stderr=stderr.decode(errors="replace"))
         raise RuntimeError("Audio transcoding failed")

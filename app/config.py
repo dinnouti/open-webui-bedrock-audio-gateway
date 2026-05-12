@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
 
     # Gateway auth
-    gateway_api_key: str
+    gateway_api_key: str = Field(..., min_length=1)
 
     # Server
     gateway_host: str = "0.0.0.0"
