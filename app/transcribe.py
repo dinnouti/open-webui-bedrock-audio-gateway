@@ -63,10 +63,10 @@ async def _transcribe_once(pcm_audio: bytes, lang_code: Optional[str]) -> str:
     start_kwargs = {
         "media_sample_rate_hz": 16000,
         "media_encoding": "pcm",
+        "language_code": lang_code,
     }
-    if lang_code:
-        start_kwargs["language_code"] = lang_code
-    else:
+    if not lang_code:
+        start_kwargs["language_code"] = None
         start_kwargs["identify_language"] = True
 
     stream = await client.start_stream_transcription(**start_kwargs)
