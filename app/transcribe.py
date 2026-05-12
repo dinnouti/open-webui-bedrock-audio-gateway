@@ -13,14 +13,30 @@ log = structlog.get_logger()
 
 CHUNK_SIZE = 8 * 1024  # 8KB chunks for streaming
 
-# ISO-639-1 to BCP-47 mapping for common languages
+# ISO-639-1 to BCP-47 mapping (default dialect when only short code is provided)
 LANGUAGE_MAP = {
-    "en": "en-US", "es": "es-US", "fr": "fr-FR", "de": "de-DE",
-    "it": "it-IT", "pt": "pt-BR", "ja": "ja-JP", "ko": "ko-KR",
-    "zh": "zh-CN", "ru": "ru-RU", "ar": "ar-SA", "hi": "hi-IN",
-    "nl": "nl-NL", "pl": "pl-PL", "sv": "sv-SE", "da": "da-DK",
-    "fi": "fi-FI", "no": "nb-NO", "tr": "tr-TR",
+    "af": "af-ZA", "ar": "ar-SA", "ca": "ca-ES", "cs": "cs-CZ",
+    "da": "da-DK", "de": "de-DE", "el": "el-GR", "en": "en-US",
+    "es": "es-US", "eu": "eu-ES", "fa": "fa-IR", "fi": "fi-FI",
+    "fr": "fr-FR", "gl": "gl-ES", "he": "he-IL", "hi": "hi-IN",
+    "hr": "hr-HR", "id": "id-ID", "it": "it-IT", "ja": "ja-JP",
+    "ko": "ko-KR", "lv": "lv-LV", "ms": "ms-MY", "nl": "nl-NL",
+    "no": "no-NO", "pl": "pl-PL", "pt": "pt-BR", "ro": "ro-RO",
+    "ru": "ru-RU", "sk": "sk-SK", "so": "so-SO", "sr": "sr-RS",
+    "sv": "sv-SE", "th": "th-TH", "tl": "tl-PH", "uk": "uk-UA",
+    "vi": "vi-VN", "zh": "zh-CN", "zu": "zu-ZA",
 }
+
+# Languages for auto-detect mode (one dialect per language, per AWS requirement).
+# Source: https://docs.aws.amazon.com/transcribe/latest/dg/supported-languages.html
+_STREAMING_LANGUAGE_OPTIONS = [
+    "af-ZA", "ar-SA", "ca-ES", "cs-CZ", "da-DK", "de-DE", "el-GR",
+    "en-US", "es-US", "eu-ES", "fa-IR", "fi-FI", "fr-FR", "gl-ES",
+    "he-IL", "hi-IN", "hr-HR", "id-ID", "it-IT", "ja-JP", "ko-KR",
+    "lv-LV", "ms-MY", "nl-NL", "no-NO", "pl-PL", "pt-BR", "ro-RO",
+    "ru-RU", "sk-SK", "so-SO", "sr-RS", "sv-SE", "th-TH", "tl-PH",
+    "uk-UA", "vi-VN", "zh-CN", "zu-ZA",
+]
 
 # Transient errors worth retrying
 _RETRYABLE_ERRORS = (
@@ -69,7 +85,7 @@ async def _transcribe_once(pcm_audio: bytes, lang_code: Optional[str]) -> str:
     else:
         start_kwargs["language_code"] = None
         start_kwargs["identify_language"] = True
-        start_kwargs["language_options"] = list(LANGUAGE_MAP.values())
+        start_kwargs["language_options"] = _STREAMING_LANGUAGE_OPTIONS
 
     stream = await client.start_stream_transcription(**start_kwargs)
 
