@@ -22,8 +22,12 @@ echo "========================================"
 # --- Health ---
 echo ""
 echo "[Health]"
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/health")
-if [ "$STATUS" = "200" ]; then pass "GET /health → 200"; else fail "GET /health" "got $STATUS"; fi
+BODY=$(curl -s "$BASE_URL/health")
+if echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('status')=='ok' else 1)" 2>/dev/null; then
+    pass "GET /health → {\"status\":\"ok\"}"
+else
+    fail "GET /health" "$BODY"
+fi
 
 # --- Discovery (no auth) ---
 echo ""
@@ -55,6 +59,12 @@ if echo "$BODY" | grep -q "Missing 'input' field"; then pass "Missing input → 
 LONG_PAYLOAD=$(python3 -c "import json; print(json.dumps({'input': 'x'*3001}))")
 BODY=$(curl -s -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" -d "$LONG_PAYLOAD" "$BASE_URL/v1/audio/speech")
 if echo "$BODY" | grep -q "Text too long"; then pass "Text too long → rejected"; else fail "Text too long" "$BODY"; fi
+
+BODY=$(curl -s -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" -d 'not json' "$BASE_URL/v1/audio/speech")
+if echo "$BODY" | grep -q "Invalid JSON"; then pass "Invalid JSON → rejected"; else fail "Invalid JSON" "$BODY"; fi
+
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $API_KEY" -H "Content-Length: 999999999" -d '' "$BASE_URL/v1/audio/speech")
+if [ "$STATUS" = "413" ]; then pass "Oversized Content-Length → 413"; else fail "Oversized Content-Length" "got $STATUS"; fi
 
 # --- TTS (requires AWS creds) ---
 echo ""
@@ -115,12 +125,37 @@ else
     fail "STT auto-detect" "TTS for French failed: HTTP $STATUS_FR"
 fi
 
+# --- TTS with non-default voice ---
+echo ""
+echo "[TTS alternate voice]"
+STATUS=$(curl -s -o "$TMPDIR/amy.mp3" -w "%{http_code}" -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" \
+  -d '{"input":"Testing alternate voice.","voice":"Amy"}' "$BASE_URL/v1/audio/speech")
+if [ "$STATUS" = "200" ]; then
+    TYPE=$(file -b "$TMPDIR/amy.mp3" | head -1)
+    if echo "$TYPE" | grep -qi "audio\|mpeg\|ID3"; then pass "TTS (voice=Amy) → valid MP3"; else fail "TTS alternate voice" "not audio: $TYPE"; fi
+else
+    fail "TTS alternate voice" "HTTP $STATUS"
+fi
+
 # --- Invalid voice fallback ---
 echo ""
 echo "[Voice fallback]"
 STATUS=$(curl -s -o "$TMPDIR/fallback.mp3" -w "%{http_code}" -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" \
   -d '{"input":"Fallback test.","voice":"NonExistentVoice"}' "$BASE_URL/v1/audio/speech")
 if [ "$STATUS" = "200" ]; then pass "Invalid voice → fallback to default"; else fail "Invalid voice fallback" "HTTP $STATUS"; fi
+
+# --- Rate limiting ---
+echo ""
+echo "[Rate limiting]"
+RATE_LIMITED=false
+for i in $(seq 1 65); do
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/health")
+    if [ "$STATUS" = "429" ]; then
+        RATE_LIMITED=true
+        break
+    fi
+done
+if [ "$RATE_LIMITED" = "true" ]; then pass "Rate limit triggered (429 after $i requests)"; else echo "  SKIP: Rate limit not triggered (may need more requests or different config)"; fi
 
 # --- Summary ---
 echo ""
