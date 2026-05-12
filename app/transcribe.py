@@ -27,16 +27,6 @@ LANGUAGE_MAP = {
     "vi": "vi-VN", "zh": "zh-CN", "zu": "zu-ZA",
 }
 
-# Languages for auto-detect mode (one dialect per language, per AWS requirement).
-# Source: https://docs.aws.amazon.com/transcribe/latest/dg/supported-languages.html
-_STREAMING_LANGUAGE_OPTIONS = [
-    "af-ZA", "ar-SA", "ca-ES", "cs-CZ", "da-DK", "de-DE", "el-GR",
-    "en-US", "es-US", "eu-ES", "fa-IR", "fi-FI", "fr-FR", "gl-ES",
-    "he-IL", "hi-IN", "hr-HR", "id-ID", "it-IT", "ja-JP", "ko-KR",
-    "lv-LV", "ms-MY", "nl-NL", "no-NO", "pl-PL", "pt-BR", "ro-RO",
-    "ru-RU", "sk-SK", "so-SO", "sr-RS", "sv-SE", "th-TH", "tl-PH",
-    "uk-UA", "vi-VN", "zh-CN", "zu-ZA",
-]
 
 # Transient errors worth retrying
 _RETRYABLE_ERRORS = (
@@ -62,30 +52,23 @@ class _TranscriptCollector(TranscriptResultStreamHandler):
         return " ".join(self.parts).strip()
 
 
-def _resolve_language(language: Optional[str]) -> Optional[str]:
-    """Resolve language: request field → .env default → None (auto-detect)."""
+def _resolve_language(language: Optional[str]) -> str:
+    """Resolve language: request field → .env default (en-US)."""
     code = language or settings.transcribe_language_code
-    if not code:
-        return None
     if len(code) <= 3 and code.lower() in LANGUAGE_MAP:
         return LANGUAGE_MAP[code.lower()]
     return code
 
 
-async def _transcribe_once(pcm_audio: bytes, lang_code: Optional[str]) -> str:
+async def _transcribe_once(pcm_audio: bytes, lang_code: str) -> str:
     """Single transcription attempt with timeout."""
     client = TranscribeStreamingClient(region=settings.aws_region)
 
     start_kwargs = {
         "media_sample_rate_hz": 16000,
         "media_encoding": "pcm",
+        "language_code": lang_code,
     }
-    if lang_code:
-        start_kwargs["language_code"] = lang_code
-    else:
-        start_kwargs["language_code"] = None
-        start_kwargs["identify_language"] = True
-        start_kwargs["language_options"] = _STREAMING_LANGUAGE_OPTIONS
 
     stream = await client.start_stream_transcription(**start_kwargs)
 

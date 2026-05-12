@@ -108,21 +108,21 @@ else
     echo "  SKIP: STT explicit language (no TTS audio)"
 fi
 
-# --- STT auto-detect with non-English audio ---
+# --- STT with explicit French language ---
 echo ""
-echo "[STT auto-detect]"
+echo "[STT French]"
 STATUS_FR=$(curl -s -o "$TMPDIR/tts_fr.mp3" -w "%{http_code}" -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" \
   -d '{"input":"Bonjour, comment allez-vous?","voice":"Lea"}' "$BASE_URL/v1/audio/speech")
 if [ "$STATUS_FR" = "200" ]; then
-    BODY=$(curl -s -H "Authorization: Bearer $API_KEY" -F "file=@$TMPDIR/tts_fr.mp3;filename=test.mp3" "$BASE_URL/v1/audio/transcriptions")
+    BODY=$(curl -s -H "Authorization: Bearer $API_KEY" -F "file=@$TMPDIR/tts_fr.mp3;filename=test.mp3" -F "language=fr" "$BASE_URL/v1/audio/transcriptions")
     if echo "$BODY" | python3 -c "import sys,json; t=json.load(sys.stdin).get('text',''); exit(0 if len(t)>3 else 1)" 2>/dev/null; then
         TEXT=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin)['text'])")
-        pass "STT auto-detect (French audio) → \"$TEXT\""
+        pass "STT (language=fr, French audio) → \"$TEXT\""
     else
-        fail "STT auto-detect" "$BODY"
+        fail "STT French" "$BODY"
     fi
 else
-    fail "STT auto-detect" "TTS for French failed: HTTP $STATUS_FR"
+    fail "STT French" "TTS for French failed: HTTP $STATUS_FR"
 fi
 
 # --- TTS with non-default voice ---

@@ -242,7 +242,7 @@ Response:
 | `GATEWAY_PORT` | `8000` | No | Listen port |
 | `LOG_FORMAT` | `console` | No | `console` for dev, `json` for production |
 | `LOG_LEVEL` | `INFO` | No | `DEBUG`, `INFO`, `WARNING`, `ERROR`. Use `DEBUG` to see Polly/Transcribe text |
-| `TRANSCRIBE_LANGUAGE_CODE` | _(auto-detect)_ | No | BCP-47 language code (e.g. `en-US`). Empty or unset enables auto-detect |
+| `TRANSCRIBE_LANGUAGE_CODE` | `en-US` | No | BCP-47 language code (e.g. `en-US`, `fr-FR`, `de-DE`). See [supported languages](https://docs.aws.amazon.com/transcribe/latest/dg/supported-languages.html) |
 | `MAX_FILE_SIZE_MB` | `25` | No | Max upload size for audio files |
 | `DEFAULT_VOICE_ID` | `Matthew` | No | Fallback Polly voice when request doesn't specify one |
 | `POLLY_ENGINE` | `generative` | No | Polly engine: `generative`, `neural`, or `standard` |
