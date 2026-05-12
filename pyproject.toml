@@ -1,0 +1,17 @@
+[project]
+name = "open-webui-bedrock-audio-gateway"
+version = "0.1.0"
+description = "OpenAI-compatible audio gateway for Open WebUI using Amazon Transcribe + Polly"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "python-multipart>=0.0.18",
+    "boto3>=1.35.0",
+    "amazon-transcribe>=0.6.2",
+    "pydantic-settings>=2.7.0",
+    "structlog>=24.0.0",
+    "slowapi>=0.1.9",
+]
